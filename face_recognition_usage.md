@@ -3,10 +3,10 @@ This doc is refer to https://github.com/ageitgey/face_recognition/blob/master/RE
 
 # Install
 ## Install on baremental
-'''
-*install python3*
-*install dependency*
-apt-get install -y --fix-missing \
+**install python3**
+**install dependency**
+
+>apt-get install -y --fix-missing \
     build-essential \
     cmake \
     gfortran \
@@ -28,14 +28,15 @@ apt-get install -y --fix-missing \
     software-properties-common \
     zip \
     && apt-get clean && rm -rf /tmp/* /var/tmp/*
-  '''
-*build dlib* (optional in case you only use python)
-'''
-cd dlib
+
+**build dlib** (optional in case you only use python)
+>cd dlib
 mkdir build; cd build; cmake ..; cmake --build .
-'''
-*install python dlib and extension*
-'python3 setup.py install '
+
+
+**install python dlib and extension**
+>python3 setup.py install
+
   
   ## Install with docker
   refer to [dockerfile](https://github.com/ageitgey/face_recognition/blob/master/Dockerfile)
