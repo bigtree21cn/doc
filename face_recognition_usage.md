@@ -32,7 +32,7 @@ This doc is refer to [doc](https://github.com/ageitgey/face_recognition/blob/mas
     ```
 - **build dlib**  (optional in case you only use python)
     ```bash
-    git clone -b 'v19.9' --single-branch https://github.com/davisking/dlib.git dlib
+    git clone https://github.com/davisking/dlib.git dlib
     cd dlib
     mkdir build; cd build; cmake ..; cmake --build .
     ```
