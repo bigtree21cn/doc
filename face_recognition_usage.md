@@ -40,6 +40,10 @@ This doc is refer to [doc](https://github.com/ageitgey/face_recognition/blob/mas
     ```bash
     python3 setup.py install
     ```
+- **install face_recongnition module**
+    ```bash
+    pip3 install face_recognition
+    ```
 ## Install with docker
 - Refer to [dockerfile](https://github.com/ageitgey/face_recognition/blob/master/Dockerfile)
   
