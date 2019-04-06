@@ -13,7 +13,10 @@
   ![](https://github.com/bigtree21cn/doc/blob/master/docker/docker.rkt.vs.docker.png)
   
 # Container Isolation
+Linux容器技术是建立的操作系统内核namespace和cgroup技术之上。通过这两种技术，实现了容器进程的隔离。 namespace主要提供了对系统运行时环境的隔离，比如进程属、ipc、 网络和文件系统等资源的隔离。 cgroup提供了物理资源，如内存、cpu、io的资源分配和限制。在进程创建(clone)的时候，通过制定其namespace信息，实现了资源的隔离，这就是容器隔离的本质。
   ### namespace
+  在最先的Linux操作系统中，所有的资源是进行全局管理。每个进程度拥有的资源，也可以在其他进每个班的同学有一个程中看到。就像一个公司，每个同事都知道其他同事在干什么。 这样资源的隔离性，安全性都不能很好的保重。一个危险的进程，有可能破坏系统中的其他进程。namespace是一种轻量级的虚拟机制，是的每个进程，每种资源可以在不同的namespace中。 资源至对相同namespace中的进程可见，这样提供了一种安全的隔离机制。就像一个学校每个班级一样，班级同学之间可以互相看到和沟通，但不能影响其他的班级同学。 
+  
   ### cgroup
 
 # Docker Archicture
