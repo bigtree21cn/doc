@@ -1,3 +1,4 @@
+**本文图片和部分代码来源互联网**
 
 # Introduction
   ### container vs virtual machine
@@ -54,6 +55,29 @@ int main(int args, char *argv[])
   
 下面是如何查看进程使用了那些namespace
 ![](https://github.com/bigtree21cn/doc/blob/master/docker/docker.namespace.list.png)
+
+有上面的命令可以看出，一个进程的每种资源都有各自的namespace, 而多个进程可以共享一个namespace。这提供了容器创建的灵活性，比如多个容器实例共用一个network namespace, 这样这些容器共享网络协议中, 有相同的ip，路由规则，端口空间，内部互相访问而不需要特别的网络配置。 在容器之中，也可以调用clone并且传入不同的namespace, 暨在上面`container_main`函数内再执行系统调用`clone`。这样就实现了容器的嵌套，运行在容器中的容器。
+![](https://github.com/bigtree21cn/doc/blob/master/docker/docker.namespace.tree.png)
+
+附内核task_struct结构体关于nsproxy以及nsproxy的定义
+```c
+struct task_struct {
+    ......
+    /* namespaces */
+    struct nsproxy *nsproxy;
+    ......
+};
+
+struct nsproxy {
+         atomic_t count;
+         struct uts_namespace *uts_ns;
+         struct ipc_namespace *ipc_ns;
+         struct mnt_namespace *mnt_ns;
+         struct pid_namespace *pid_ns_for_children;
+         struct net             *net_ns;
+};
+```
+
 
   ### cgroup
 
