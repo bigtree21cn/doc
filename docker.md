@@ -88,8 +88,64 @@ struct nsproxy {
   - 上面的组合
   
   cgroup由不同的子系统来控制各种资源的使用，每种资源有一个控制器负责具体的控制任务。cgroup提供了一个cgroup虚拟文件系统来来提供对各个子系统的访问，要使用cgroup就必须挂载cgroup虚拟文件系统。 cgoup包括以下子系统:
+  - blkio — 这个子系统为块设备设定输入/输出限制，比如物理设备（磁盘，固态硬盘，USB 等等）。
+  - cpu — 这个子系统使用调度程序提供对 CPU 的 cgroup 任务访问。
+  - cpuacct — 这个子系统自动生成 cgroup 中任务所使用的 CPU 报告。
+  - cpuset — 这个子系统为 cgroup 中的任务分配独立 CPU（在多核系统）和内存节点。
+  - devices — 这个子系统可允许或者拒绝 cgroup 中的任务访问设备。
+  - freezer — 这个子系统挂起或者恢复 cgroup 中的任务。
+  - memory — 这个子系统设定 cgroup 中任务使用的内存限制，并自动生成??内存资源使用报告。
+  - net_cls — 这个子系统使用等级识别符（classid）标记网络数据包，可允许 Linux 流量控制程序（tc）识别从具体 cgroup 中生成的数据包。
+  - net_prio — 这个子系统用来设计网络流量的优先级
+  - hugetlb — 这个子系统主要针对于HugeTLB系统进行限制，这是一个大页文件系统。
+  下面代码演示如何通过systemd创建一个服务，并且限制改服务的cpu和内存使用。
+  ```bash
+#服务脚本: myservice.sh------------------------
+#! /bin/bash                                                                       
+cpu_loop()                                                                         
+{                                                                                  
+        while true                                                                 
+        do                                                                         
+                i=i+100;                                                           
+                i=100                                                              
+        done                                                                       
+}                                                                                  
+mem_loop()                                                                         
+{                                                                                  
+        rm -rf /tmp/memory                                                         
+        mkdir /tmp/memory                                                          
+        mount -t tmpfs -o size=512M tmpfs /tmp/memory                              
+        dd if=/dev/zero of=/tmp/memory/block                                       
+        sleep 10                                                                   
+        rm /tmp/memory/block                                                       
+        umount /tmp/memory                                                         
+        rmdir /tmp/memory                                                          
+}                                                                                  
+cpu_loop &                                                                         
+pid1=$!                                                                            
+mem_loop &                                                                         
+pid2=$!   
+wait $pid1
+wait $pid2
 
+#systemd  /etc/systemd/system/myservice.service unit文件--------------
+[Unit]                                               
+Description=cgroup test demo service                 
+After=network.target                                 
+                                                     
+[Service]                                            
+Type=simple                                          
+Restart=always                                       
+RestartSec=1                                         
+User=root                                            
+ExecStart=/bin/bash /home/jefli/myservice.sh      
+CPUQuota=10%                                         
+MemoryLimit=500M                                     
+                                                     
+[Install]                                            
+WantedBy=multi-user.target                           
 
+  ```
 
 # Docker Archicture
 
