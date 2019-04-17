@@ -152,6 +152,56 @@ WantedBy=multi-user.target
 # Do
 
 # Docker Networking
+## Linux network namespace
+前面我们讲到容器是通过namespace来进行隔离的。 每个linux network namespace可以有自己独立的网络接口，协议栈，ip，iptables, socket等网络资源。而容器首先是先创建进程，然后把进程分配给不同的network namespace。 因此每个容器都可以有自己独立的ip地址，接口，路由等。 如果两个容器创建的时候被分配在同一个网络空间中，则这两个容器共享同一个网络协议栈，它们有享同的ip。容器之间的网络访问没有障碍。同样的道理，如果容器和主机被分配在同一个网络空间中，则容器和主机共享ip。 理解了network namespace，就能自然的理解每个容器的网络是怎么工作的。  
+
+下面的代码演示创建三个不同的network namespace，每个network namespace被赋予了不同的网络接口和ip地址。通过Linux veth pair技术和bridge技术，来创建容器之间网络的通信。
+```bash
+#创建三个不同的network namespace
+ip netns add net1
+ip netns add net2
+ip netns add net3
+
+#创建三个veth pair，并且把其中的一个接口分配给三个不同的network ns; 
+ip link add type veth
+ip link set dev  veth0 netns net1
+ip link add type veth
+ip link set dev veth0 netns net2
+ip link add type veth
+ip link set dev veth0 netns net3
+
+#给每个接口分配ip地址，主要每个"容器"就有了自己的接口和ip
+ip netns exec net1 ip link set veth0 up 
+ip netns exec net1 ip addr add 10.0.1.1/24 veth0
+ip netns exec net1 ip addr add 10.0.1.1/24 dev veth0
+ip netns exec net2 ip link set veth0 up 
+ip netns exec net2 ip addr add 10.0.1.2/24 dev veth0
+ip netns exec net3 ip link set veth0 up 
+ip netns exec net3 ip addr add 10.0.1.3/24 dev veth0
+
+#创建Linux bridge, 把之前创建的veth pair的另一个接口都连接到该bridge上
+#这样三个"容器” 之间就可以通过bridge进行二层交换
+ip link add br0 type bridge
+ip link set br0 up
+ip addr add 10.0.1.254/24 dev br0
+ip link set dev veth1 master br0
+ip link set dev veth2 master br0
+ip link set dev veth3 master br0
+ip link set dev veth1 up
+ip link set dev veth2 up
+ip link set dev veth3 up
+bridge link
+ip netns exec net1 ping 10.0.1.1
+ip netns exec net1 ping 10.0.1.2
+ip netns exec net1 ping 10.0.1.3
+ip netns exec net1 ping 10.0.1.0
+ip netns exec net1 ping 10.0.1.1
+ip netns exec net1 ip link set lo up
+ip netns exec net1 ping 10.0.1.1
+
+# 访问外网 (net1 -> host); 加上网关，并且打开了ip forward
+ip netns exec net1 ip route add default via 10.0.1.254 dev veth0
+```
 
 # Docker Security
 
