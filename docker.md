@@ -209,9 +209,11 @@ ip netns exec net1 ip route add default via 10.0.1.254 dev veth0
 
 | Driver | 描述 |
 | - | - |
-| host | bbb |
-| bridge | xxxx |
-| overlay | xxxx |
+| host | 没有网络隔离，容器和主机共享所有网络资源。容器可以直接访问主机的所有接口，容器的网络就好像主机上的一个进程一样，不能和主机其他的进程有端口冲突 |
+| bridge | 容器有自己的ip地址，容器之间通过bridge技术进行通信。 但容器要和bridge之外进行通信，需要通过ip forward以及ip table规则实现 |
+| overlay | 通过覆盖网络支持多主机上的容器之间进行通信。 综合使用了本地的bridge网络以及vxlan的覆盖网络，把多个在不同主机上的容器子网连接起来，实现跨主机跨网段的通信 |
+|MACVLAN| xxxx |
+| None | 容器有自己独立的网络空间，但没有创建任何的网络接口。容器完全和外界隔离|
 
 
 # Docker Security
