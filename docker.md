@@ -205,7 +205,7 @@ ip netns exec net1 ip route add default via 10.0.1.254 dev veth0
 
 **Docker网络**
 上一节我们通过network namespace模拟了docker的网络原理。那实际上就是docker在host单机网络的一种实现。Docker引擎通过内部的网络驱动来创建不同的网络实现，docker引擎在初始化容器的时候，根据默认的配置或者用户传入的网络类型，来创建容器的网络模型。 目前，docker包括内建的网络驱动模型以及第三方的网络模型。  
-**Docker的集中内建网络驱动**
+**Docker内建网络驱动**
 
 | Driver | 描述 |
 | - | - |
@@ -214,6 +214,23 @@ ip netns exec net1 ip route add default via 10.0.1.254 dev veth0
 | overlay | 通过覆盖网络支持多主机上的容器之间进行通信。 综合使用了本地的bridge网络以及vxlan的覆盖网络，把多个在不同主机上的容器子网连接起来，实现跨主机跨网段的通信 |
 |MACVLAN| xxxx |
 | None | 容器有自己独立的网络空间，但没有创建任何的网络接口。容器完全和外界隔离|
+
+**Docker第三方网络驱动**
+Docker也支持第三方网络插件，来构造第三方网络模型。社区上已有的第三方网络插件有: contiv, weave, calico, kuryr, infoblox. 可以参考网上的资料来了解这些网络的特性，根据业务的场景选择合适的网络模型。
+
+**bridge Network**
+在默认的情况下，docker engine会在主机上创建docker0 网桥。 docker0为默认的容器之间的通信提供二层交换。当一个容器被创建的时候，一个veth pair会被创建， 其中的一个接口被attach到容器的网络空间中，并且在容器内部重命名为eth0。 而veth pair对应的接口被连接到docker0 网桥上。veth pair技术就像一个管道，在其中的一个接口发送数据，数据会完全复制到另一个接口上， 就像一个传声筒一样。 这样，所有在同一个host上创建的容器之前的通信都可以通过docker0来通信。
+
+那容器是怎样访问外部世界呢？  当一个数据包发往要给外部ip: port的时候， 数据首先被发到容器内部eth0上，通过veth paire, 数据被发往docker0。因为ip_foward，docker0把数据转发给主机的eth0网卡。 主机发现目的ip地址不是自己网段，就把数据做了SNAT。 把容器的ip地址替换成主机eth0的ip地址发送出去。当目标主机响应时候，主机eth0收到该响应转发给docker0，根据iptable规则
+``` bash
+iptables -I FORWARD -o docker0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+```
+该iptable规则的意思是，这条规则的意思是，在宿主机上转发给docker0网桥的网络数据报文，如果是该数据报文所处的连接已经建立的话，则无条件接受，并由Linux内核将其发送到原来的连接上，即回到Docker Container内部。
+
+上面说的是容器主动访问外部世界以及外部响应数据包的流程。 那么，外部是怎么样访问容器内部的服务呢？ 在创建容器的时候，可以通过端口绑定，把容器要暴露给外部的服务端口绑定到容器内部端口上。 由于外部只认识主机的ip地址，当外部数据包到达主机ip上该端口时， 通过DNAT， 主机把外部的ip和端口映射成容器内部的ip和端口。由于host知道容器的ip，所有数据包可以通过veth pair结束发送到容器内部的eth0接口。从而使得外部能访问容纳的服务。
+
+
+
 
 
 # Docker Security
