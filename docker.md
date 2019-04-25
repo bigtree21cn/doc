@@ -242,8 +242,9 @@ flannel是一种覆盖网络，把tcp包封装在另一种协议中进行传输�
 下图图示了通过UDP作为转发协议的流程图。
 ![](https://github.com/bigtree21cn/doc/blob/master/docker/docker.network.flannel.png)
 
+数据包从容器出来以后到达docker0， 然后再经过flannel0. flannel0是一个p2p虚拟网卡，在网卡的另一端，数据包被重新封装从UDP包，发送到目的主机。 目的主机的flannel 服务收到UDP数据包之后，把数据解包，再转发给目的主机的docker0。 所以源容器和目的容器是不知道这个封包和解包的过程。 那么flannel数据包是如何实现跨主机之间的路由呢？ 答案是flannel通过etcd来管理各个节点和主机docker网段的映射。当flannel启动时候，它会向etcd申请一个网段(如172.1.0.0/16),并且把这个网段和主机IP的映射关系写入etcd。同时，docker daemon的启动参数被修改，通过--bip制定通过该daemon进程启动的所有容器ip都在这个网段中。 通过修改路由表，建立flannel0和docker0以及对应网段之间的路由关系。  这样，就实现了跨节点容器之间的网络通信。
 
-
+这种覆盖网络的好处是非常灵活，很方便的实现网络的扩展。加入新的节点和新的网段都非常方便。但它也有一点性能上的损失。 节点之间的通信默认是不会加密的，通过配置节点之间的证书，可以实现节点之间的安全通信。
 
 # Docker Security
 
