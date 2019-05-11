@@ -162,12 +162,12 @@ WantedBy=multi-user.target
 docker使用的是联合文件系统(Union File System)，该文件系统把一个容器内所依赖的所有镜像内部的文件系统进行合并，到容器内部产生一个合并之后的文件系统。 
 
 在这个文件系统的最底层就是bootfs。 bootfs用来加载linux内核，以为对内核资源(cgroup, namspace)的文件抽象。 在bootfs之上，就是rootfs。rootfs通常是操作系统的文件系统，比如linux的/ /bin, /dev等运行时目录。 rootfs通常是base镜像引入，比如Ubuntu, debian等基础镜像，包含了各自linux发行版本的运行时目录结构。和bootfs不一样，rootfs是和具体操作系统的发行版本相关的。 在bootfs之上，就是每个应用层的文件系统了。每个imange 层都可以创建自己的目录结构，docker发文件系统就是在每一层之上进行叠加。
-![docker.image.layer2](/assets/docker.image.layer2.png)
+![docker.image.layer2](https://github.com/bigtree21cn/doc/blob/master/docker/docker.image.layer2.png)
 
 如果说两个层上都有相同的目录相同的文件怎么呢？ 答案是上层的覆盖下层。实际上在运行环境中，如果上层需要修改下层的文件，文件系统是采用拷贝再修改的方式(copy-on-write)。 
 
 Docker有内置的镜像管理系统。通过客户服务器模式(cs)，docker引擎可以跟一个重要的镜像存储服务器沟通。默认是docker的官方hub。 当用户启动一个容器的时候，引擎首相从本地寻找该镜像。如果本地没有，则从重要 镜像服务器把该镜像(以及其依赖的每个layer)都下载到本地缓存。这样我们就把容器镜像的发布，部署和运行解耦了。
-![docker.image.registry](/assets/docker.image.registry.png)
+![docker.image.registry](https://github.com/bigtree21cn/doc/blob/master/docker/docker.image.registry.png)
 
 # Docker Networking
 **Linux network namespace**
