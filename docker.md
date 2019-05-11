@@ -1,6 +1,15 @@
 **本文图片和部分代码来源互联网**
 
-# Introduction
+- [背景介绍](#%E8%83%8C%E6%99%AF%E4%BB%8B%E7%BB%8D)
+- [容器的隔离性](#%E5%AE%B9%E5%99%A8%E7%9A%84%E9%9A%94%E7%A6%BB%E6%80%A7)
+- [Docker 架构](#docker-%E6%9E%B6%E6%9E%84)
+- [Docker 镜像](#docker-%E9%95%9C%E5%83%8F)
+- [Docker 网络](#docker-%E7%BD%91%E7%BB%9C)
+- [Docker 安全](#docker-%E5%AE%89%E5%85%A8)
+- [容器编排](#%E5%AE%B9%E5%99%A8%E7%BC%96%E6%8E%92)
+
+
+# 背景介绍
   ### container vs virtual machine
   ![](https://github.com/bigtree21cn/doc/blob/master/docker/docker.vm.vs.container.png)
   虚拟机运行在虚拟化层之上，虚拟化层对硬件资源进行抽象和共享。 每个虚拟机有自己独立的虚拟设备，在此之上可以创建和运行自己的操作系统。所有虚拟机是在整个操作系统层面进行隔离。  容器是利用Linux内核的隔离机制来创建和运行容器的。同一个主机上的容器实例是共享同一个操作系统内核，通过内核的namspace来创建运行环境隔离，通过内核cgroup来进行资源的隔离。
@@ -15,7 +24,7 @@
   **rkt** linux容器管理的另一个实现，它是遵守appc标准。相对docker更加轻量化。有coreos维护。
   ![](https://github.com/bigtree21cn/doc/blob/master/docker/docker.rkt.vs.docker.png)
   
-# Container Isolation
+# 容器的隔离性
 Linux容器技术是建立的操作系统内核namespace和cgroup技术之上。通过这两种技术，实现了容器进程的隔离。 namespace主要提供了对系统运行时环境的隔离，比如进程属、ipc、 网络和文件系统等资源的隔离。 cgroup提供了物理资源，如内存、cpu、io的资源分配和限制。在进程创建(clone)的时候，通过制定其namespace信息，实现了资源的隔离，这就是容器隔离的本质。
   ### namespace
   在最先的Linux操作系统版本中，所有的资源是进行全局管理的。每个进程度拥有的资源，也可以在其他进进程中看到。就像一个学校，每个同学可能知道其他同学的情况，可以影响其他同学。 这样的实现对资源的隔离性，安全性都不能很好的保证。一个危险的进程，有可能破坏系统中的其他进程。namespace是一种轻量级的虚拟机制，是的每个进程，每种资源可以在不同的namespace中。 资源至对相同namespace中的进程可见，这样提供了一种安全的隔离机制。就像一个学校每个班级一样，班级同学之间可以互相看到和沟通，但不能影响其他的班级同学。 
@@ -147,13 +156,12 @@ WantedBy=multi-user.target
 
   ```
 
-# Docker Archicture
+# Docker 架构
 
-# Docker Image
+# Docker 镜像
 **层(layer).镜像(image).容器(container)**
 在构建一个镜像的时候，我们通常是基于已经存在的镜像。在该镜像上，我们安装相应的软件，再安装配置自己的开发的应用。 同时，该镜像又可以作为其他镜像的基础镜像。容器的镜像是分层的，最多可以达到128层。 所以通常，每一层都是一个镜像，每一层都是可以共享的。那怎么样区分每一层呢，docker在构建镜像的时候，会给每一个镜像一个唯一的哈希值，同时也指定它所依赖的上一层。通过这种依赖关系，就可以把整个容器运行所需要的层都关联起来。
-![docker.image.layers](/assets/docker.image.layers.png)
-
+![docker.image.layers](https://github.com/bigtree21cn/doc/blob/master/docker/docker.image.layers.png)
 我们通常所说的镜像，就是最上面一层。当你通过docker pull去获取该镜像时候，每一层都会被下载。如果有的层已经被共享，而且已经下载过，那这层就不再需要下载了。比如ubuntu镜像，很多其他的容器进项都是基于它创建的。 docker hub上有很多官方的镜像，你也可以共享你自己的容器镜像。这使得开发人员可以在被人的基础上开发自己的容器应用。同时也使得容器镜像模块化，不会很臃肿，可以节约磁盘。 
 
 镜像是只读的。当一个容器被启动起来，镜像的每一层都被mount到容器内部的文件系统。每一层都是不能修改的。这样当容器中止的时候，镜像的内容是不会改变的。 那么是怎么改变容器里面的内容的呢？ 容器启动起来之后，docker文件系统会在最上面创建一层，所有的写操作都是在这一层完成。用户可以commit这个容器，把这种修改持久化。这样该镜像会产生新的一层，被赋予新的哈希值，这个新的镜像依赖commit之前的那个镜像。 如果用户不commit该容器，那么一旦这个容器停止所有的修改都会丢失。所以说容器本身是不保存状态的， 你可以在这种镜像启动无数容器，然后销毁。
@@ -169,7 +177,7 @@ docker使用的是联合文件系统(Union File System)，该文件系统把一�
 Docker有内置的镜像管理系统。通过客户服务器模式(cs)，docker引擎可以跟一个重要的镜像存储服务器沟通。默认是docker的官方hub。 当用户启动一个容器的时候，引擎首相从本地寻找该镜像。如果本地没有，则从重要 镜像服务器把该镜像(以及其依赖的每个layer)都下载到本地缓存。这样我们就把容器镜像的发布，部署和运行解耦了。
 ![docker.image.registry](https://github.com/bigtree21cn/doc/blob/master/docker/docker.image.registry.png)
 
-# Docker Networking
+# Docker 网络
 **Linux network namespace**
 前面我们讲到容器是通过namespace来进行隔离的。 每个linux network namespace可以有自己独立的网络接口，协议栈，ip，iptables, socket等网络资源。而容器首先是先创建进程，然后把进程分配给不同的network namespace。 因此每个容器都可以有自己独立的ip地址，接口，路由等。 如果两个容器创建的时候被分配在同一个网络空间中，则这两个容器共享同一个网络协议栈，它们有享同的ip。容器之间的网络访问没有障碍。同样的道理，如果容器和主机被分配在同一个网络空间中，则容器和主机共享ip。 理解了network namespace，就能自然的理解每个容器的网络是怎么工作的。  
 
@@ -264,6 +272,6 @@ flannel是一种覆盖网络，把tcp包封装在另一种协议中进行传输�
 
 这种覆盖网络的好处是非常灵活，很方便的实现网络的扩展。加入新的节点和新的网段都非常方便。但它也有一点性能上的损失。 节点之间的通信默认是不会加密的，通过配置节点之间的证书，可以实现节点之间的安全通信。
 
-# Docker Security
+# Docker 安全
 
-# Ochestration
+# 容器编排
